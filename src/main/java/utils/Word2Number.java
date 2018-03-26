@@ -11,8 +11,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Word2Number {
-  public static SimplifyEnum SIMPLIFY_STANDARD = SimplifyEnum.NONE;
-
   public static List<List<String>> extract(String source) {
     List<String> sourceList = Stream.of(source.toLowerCase().split("[ ]")).collect(Collectors.toList());
     List<List<String>> resultList = new ArrayList<>();
@@ -33,6 +31,10 @@ public class Word2Number {
   }
 
   public static String replace(String source) {
+    return replace(source, SimplifyEnum.NONE);
+  }
+
+  public static String replace(String source, SimplifyEnum simplifyStandard) {
     List<String> sourceList = Stream.of(source.toLowerCase().split("[ ]")).collect(Collectors.toList());
     StringBuilder sb = new StringBuilder();
     for (int start = 0; start < sourceList.size(); ) {
@@ -46,17 +48,15 @@ public class Word2Number {
         for (int end = start + 1; ; end++) {
           List<Map<List<String>, Boolean>> resultList;
           if (end == sourceList.size() || !WordEnum.contains(sourceList.get(end))) {
-            try {
-              check(sourceList.subList(start, end));
+            if (checkWithoutException(sourceList.subList(start, end))) {
               resultList = new ArrayList<>();
               resultList.add(Collections.singletonMap(sourceList.subList(start, end), true));
-            } catch (IllegalInputException e) {
-              e.printStackTrace();
+            } else {
               resultList = markSubString(sourceList.subList(start, end));
             }
             resultList.forEach(sub ->
                 sub.forEach((key, value) -> {
-                  sb.append(value ? calculate(format(map(key))) : key.get(0));
+                  sb.append(value ? calculate(format(map(key)), simplifyStandard) : key.get(0));
                   sb.append(' ');
                 })
             );
@@ -71,33 +71,33 @@ public class Word2Number {
   }
 
   public static String transform(String source) {
-    return transform(source, true);
+    return transform(source, true, SimplifyEnum.NONE);
   }
 
-  public static String transform(String source, boolean needCheck) {
+  public static String transform(String source, boolean needCheck, SimplifyEnum simplifyStandard) {
     String[] sourceArray = source.toLowerCase().split("[ ]");
-    return transform(sourceArray, needCheck);
+    return transform(sourceArray, needCheck, simplifyStandard);
   }
 
   public static String transform(String[] sourceArray) {
-    return transform(sourceArray, true);
+    return transform(sourceArray, true, SimplifyEnum.NONE);
   }
 
-  public static String transform(String[] sourceArray, boolean needCheck) {
+  public static String transform(String[] sourceArray, boolean needCheck, SimplifyEnum simplifyStandard) {
     List<String> sourceList = Stream.of(sourceArray).collect(Collectors.toList());
-    return transform(sourceList, needCheck);
+    return transform(sourceList, needCheck, simplifyStandard);
   }
 
   public static String transform(List<String> sourceList) {
-    return transform(sourceList, true);
+    return transform(sourceList, true, SimplifyEnum.NONE);
   }
 
-  public static String transform(List<String> sourceList, boolean needCheck) {
+  public static String transform(List<String> sourceList, boolean needCheck, SimplifyEnum simplifyStandard) {
     List<WordEnum> wordList = map(sourceList);
     if (needCheck) {
       check(sourceList);
     }
-    return calculate(format(wordList));
+    return calculate(format(wordList), simplifyStandard);
   }
 
   private static long getScale(long arg) {
@@ -107,6 +107,56 @@ public class Word2Number {
         return i;
       }
     }
+  }
+
+  private static void check(List<String> sourceList) {
+    if (!checkWithoutException(sourceList)) {
+      throw new IllegalInputException();
+    }
+  }
+
+  private static boolean checkWithoutException(List<String> sourceList) {
+    List<WordEnum> wordList = map(sourceList);
+    int dotCount = 0;
+    for (int i = 0; i < sourceList.size(); i++) {
+      switch (wordList.get(i).getType()) {
+        case NUMBER: {
+          break;
+        }
+        case SCALE: {
+          if (dotCount > 0) {
+            return false;
+          }
+          break;
+        }
+        case SYMBOL: {
+          if (WordEnum.DOT.same(wordList.get(i))) {
+            if (++dotCount == 2 || i == sourceList.size() - 1 || !TypeEnum.NUMBER.equals(wordList.get(i + 1).getType())) {
+              return false;
+            }
+          } else if (WordEnum.MINUS.same(wordList.get(i)) || WordEnum.AND.same(wordList.get(i))) {
+            if (i == sourceList.size() - 1 || dotCount > 0) {
+              return false;
+            } else if (WordEnum.MINUS.same(wordList.get(i)) && WordEnum.MINUS.same(wordList.get(i + 1)) || WordEnum.AND.same(wordList.get(i)) && WordEnum.AND.same(wordList.get(i + 1))) {
+              return false;
+            } else if (i == 0) {
+              if (TypeEnum.SCALE.equals(wordList.get(i + 1).getType()) || WordEnum.DOT.same(wordList.get(i + 1)) && sourceList.size() == 2) {
+                return false;
+              }
+            } else {
+              if (TypeEnum.SYMBOL.equals(wordList.get(i + 1).getType()) || TypeEnum.SCALE.equals(wordList.get(i + 1).getType())) {
+                return false;
+              }
+            }
+          }
+          break;
+        }
+        default: {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   private static List<Map<List<String>, Boolean>> markSubString(List<String> sourceList) {
@@ -146,20 +196,27 @@ public class Word2Number {
               item.add(sourceList.get(index));
             }
           } else if (WordEnum.MINUS.same(wordList.get(index)) || WordEnum.AND.same(wordList.get(index))) {
-            if (index == sourceList.size() - 1 || (!TypeEnum.NUMBER.equals(wordList.get(index + 1).getType()) && !TypeEnum.SCALE.equals(wordList.get(index + 1).getType()) && !WordEnum.DOT.same(wordList.get(index + 1)))) {
-              if (index == sourceList.size() - 1 || !TypeEnum.NUMBER.equals(wordList.get(index + 1).getType())) {
+            if (index == sourceList.size() - 1 || dotCount > 0) {
+              illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
+              finish = true;
+            } else if (WordEnum.MINUS.same(wordList.get(index)) && WordEnum.MINUS.same(wordList.get(index + 1)) || WordEnum.AND.same(wordList.get(index)) && WordEnum.AND.same(wordList.get(index + 1))) {
+              illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
+              finish = true;
+            } else if (index == 0) {
+              if (TypeEnum.NUMBER.equals(wordList.get(index + 1).getType()) || WordEnum.DOT.same(wordList.get(index + 1)) && sourceList.size() > 2) {
+                item.add(sourceList.get(index));
+              } else if (TypeEnum.SCALE.equals(wordList.get(index + 1).getType()) || WordEnum.DOT.same(wordList.get(index + 1)) && sourceList.size() == 2) {
                 illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
                 finish = true;
-              } else {
-                item.add(sourceList.get(index));
+              }
+            } else {
+              if (TypeEnum.SYMBOL.equals(wordList.get(index + 1).getType()) || TypeEnum.SCALE.equals(wordList.get(index + 1).getType())) {
+                illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
+                finish = true;
               }
             }
           }
           break;
-        }
-        default: {
-          illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
-          finish = true;
         }
       }
       index++;
@@ -179,41 +236,6 @@ public class Word2Number {
     List<Map<List<String>, Boolean>> suffixList = markSubString(sourceList.subList(index, sourceList.size()));
     prefixList.addAll(suffixList);
     return prefixList;
-  }
-
-  private static void check(List<String> sourceList) {
-    List<WordEnum> wordList = map(sourceList);
-    int dotCount = 0;
-    for (int i = 0; i < sourceList.size(); i++) {
-      switch (wordList.get(i).getType()) {
-        case NUMBER: {
-          break;
-        }
-        case SCALE: {
-          if (dotCount > 0) {
-            throw new IllegalInputException();
-          }
-          break;
-        }
-        case SYMBOL: {
-          if (WordEnum.DOT.same(wordList.get(i))) {
-            if (++dotCount == 2 || i == sourceList.size() - 1 || !TypeEnum.NUMBER.equals(wordList.get(i + 1).getType())) {
-              throw new IllegalInputException();
-            }
-          } else if (WordEnum.MINUS.same(wordList.get(i)) || WordEnum.AND.same(wordList.get(i))) {
-            if (i == sourceList.size() - 1 || (!TypeEnum.NUMBER.equals(wordList.get(i + 1).getType()) && !TypeEnum.SCALE.equals(wordList.get(i + 1).getType()) && !WordEnum.DOT.same(wordList.get(i + 1)))) {
-              if (i == sourceList.size() - 1 || !TypeEnum.NUMBER.equals(wordList.get(i + 1).getType())) {
-                throw new IllegalInputException();
-              }
-            }
-          }
-          break;
-        }
-        default: {
-          throw new IllegalInputException();
-        }
-      }
-    }
   }
 
   private static FormatEnum getFormatType(List<WordEnum> list) {
@@ -255,7 +277,7 @@ public class Word2Number {
 
     if (roundList.stream().map(word -> TypeEnum.NUMBER.equals(word.getType())).reduce((x, y) -> x && y).orElse(false)) {
       for (int i = roundList.size() - 1; i >= 0; i--) {
-        if (roundList.get(i).getValue() > 20 && i != roundList.size() - 1) {
+        if (roundList.get(i).getValue() >= 20 && i != roundList.size() - 1) {
           resultList.get(0).arg += roundList.get(i).getValue();
           resultList.get(0).scale = getScale(resultList.get(0).arg);
         } else {
@@ -297,14 +319,14 @@ public class Word2Number {
       data.arg += arg;
       data.scale = getScale(data.arg);
       resultList.add(0, data);
-      if (WordEnum.MINUS.same(roundList.get(0))) {
+      if (WordEnum.MINUS.same(roundList.get(0)) && (FormatEnum.DECIMAL.equals(formatType) || !(roundList.size() == 2 && roundList.get(1).getValue().equals(0L)))) {
         resultList.add(0, Data.MINUS_SYMBOL_DATA);
       }
     }
     return resultList;
   }
 
-  private static String calculate(List<Data> list) {
+  private static String calculate(List<Data> list, SimplifyEnum simplifyStandard) {
     StringBuilder sb = new StringBuilder();
     if (Data.MINUS_SYMBOL_DATA.equals(list.get(0))) {
       sb.append('-');
@@ -316,14 +338,14 @@ public class Word2Number {
       return sb.toString();
     } else {
       Double numberValue = Double.parseDouble(sb.toString());
-      if (!SIMPLIFY_STANDARD.equals(SimplifyEnum.NONE) && getScale(Long.parseLong(sb.toString())) >= getScale(SIMPLIFY_STANDARD.getValue())) {
-        numberValue /= SIMPLIFY_STANDARD.getValue();
+      if (!simplifyStandard.equals(SimplifyEnum.NONE) && getScale(Long.parseLong(sb.toString())) >= getScale(simplifyStandard.getValue())) {
+        numberValue /= simplifyStandard.getValue();
         String numberString = numberValue.toString();
         int dotIndex = numberString.split("[.]")[0].length();
         String roundPart = numberString.substring(0, dotIndex);
         String decimalPart = numberString.substring(dotIndex + 1);
         decimalPart = decimalPart.equals("0") ? "" : "." + decimalPart;
-        return roundPart + decimalPart + " " + SIMPLIFY_STANDARD.getText();
+        return roundPart + decimalPart + " " + simplifyStandard.getText();
       } else {
         return sb.toString();
       }
