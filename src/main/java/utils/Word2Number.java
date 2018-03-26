@@ -46,7 +46,7 @@ public class Word2Number {
         for (int end = start + 1; ; end++) {
           List<Map<List<String>, Boolean>> resultList;
           if (end == sourceList.size() || !WordEnum.contains(sourceList.get(end))) {
-            if (checkWithOutException(sourceList.subList(start, end))) {
+            if (checkWithoutException(sourceList.subList(start, end))) {
               resultList = new ArrayList<>();
               resultList.add(Collections.singletonMap(sourceList.subList(start, end), true));
             } else {
@@ -214,7 +214,7 @@ public class Word2Number {
     }
   }
 
-  private static boolean checkWithOutException(List<String> sourceList) {
+  private static boolean checkWithoutException(List<String> sourceList) {
     List<WordEnum> wordList = map(sourceList);
     int dotCount = 0;
     for (int i = 0; i < sourceList.size(); i++) {
