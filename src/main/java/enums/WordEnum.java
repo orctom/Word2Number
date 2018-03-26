@@ -86,10 +86,6 @@ public enum WordEnum {
       case POINT_WORD: {
         return DOT.equals(word) || DOT_WORD.equals(word) || POINT_WORD.equals(word);
       }
-      case ZERO:
-      case O: {
-        return ZERO.equals(word) || O.equals(word);
-      }
       default:
         return this.equals(word);
     }

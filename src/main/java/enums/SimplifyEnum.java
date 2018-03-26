@@ -4,7 +4,7 @@ public enum SimplifyEnum {
   NONE(1, ""),
   HUNDRED(100, "hundred"),
   THOUSAND(1000, "thousand"),
-  MILLION(1000000, "million"),
+  MILLION(1000000, "million"),//default
   BILLION(1000000000, "billion");
 
   private long value;

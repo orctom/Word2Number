@@ -18,7 +18,7 @@ public class Word2NumberTest {
     System.out.println(testString);
     assert "0".equals(testString);
 
-    testString = Word2Number.transform(Collections.singletonList("zero"), false);
+    testString = Word2Number.transform(Collections.singletonList("zero"), false, SimplifyEnum.NONE);
     System.out.println(testString);
     assert "0".equals(testString);
 
@@ -26,15 +26,15 @@ public class Word2NumberTest {
     System.out.println(testString);
     assert "10059".equals(testString);
 
-    testString = Word2Number.transform(testStringArray, false);
+    testString = Word2Number.transform(testStringArray, false, SimplifyEnum.NONE);
     System.out.println(testString);
     assert "10059".equals(testString);
 
-    testString = Word2Number.transform("Hundred", false);
+    testString = Word2Number.transform("Hundred", false, SimplifyEnum.NONE);
     System.out.println(testString);
     assert "100".equals(testString);
 
-    testString = Word2Number.transform("Minus Hundred Dot One Two Three Four Five", true);
+    testString = Word2Number.transform("Minus One Hundred Dot One Two Three Four Five", true, SimplifyEnum.NONE);
     System.out.println(testString);
     assert "-100.12345".equals(testString);
 
@@ -106,27 +106,21 @@ public class Word2NumberTest {
     System.out.println(testString);
     assert "15".equals(testString);
 
-    Word2Number.SIMPLIFY_STANDARD = SimplifyEnum.HUNDRED;
-    testString = Word2Number.transform("thousand hundred");
+    testString = Word2Number.transform("thousand hundred", true, SimplifyEnum.HUNDRED);
     System.out.println(testString);
     assert "11 hundred".equals(testString);
 
-    Word2Number.SIMPLIFY_STANDARD = SimplifyEnum.THOUSAND;
-    testString = Word2Number.transform("thousand hundred");
+    testString = Word2Number.transform("thousand hundred", true, SimplifyEnum.THOUSAND);
     System.out.println(testString);
     assert "1.1 thousand".equals(testString);
 
-    Word2Number.SIMPLIFY_STANDARD = SimplifyEnum.MILLION;
-    testString = Word2Number.transform("two million");
+    testString = Word2Number.transform("two million", true, SimplifyEnum.MILLION);
     System.out.println(testString);
     assert "2 million".equals(testString);
 
-    Word2Number.SIMPLIFY_STANDARD = SimplifyEnum.BILLION;
-    testString = Word2Number.transform("eleven billion");
+    testString = Word2Number.transform("eleven billion", true, SimplifyEnum.BILLION);
     System.out.println(testString);
     assert "11 billion".equals(testString);
-
-    Word2Number.SIMPLIFY_STANDARD = SimplifyEnum.NONE;
   }
 
   @Test
@@ -152,6 +146,10 @@ public class Word2NumberTest {
     result = Word2Number.replace("the nineteen ninety nine has past nineteen years");
     System.out.println(result);
     assert "the 1999 has past 19 years".equals(result);
+
+    result = Word2Number.replace("the whether will be hotter in next twenty four hours");
+    System.out.println(result);
+    assert "the whether will be hotter in next 24 hours".equals(result);
 
     result = Word2Number.replace("the score is point nine");
     System.out.println(result);
@@ -188,6 +186,46 @@ public class Word2NumberTest {
     result = Word2Number.replace("um could you please back up sir you are kinda too close");
     System.out.println(result);
     assert "um could you please back up sir you are kinda too close".equals(result);
+
+    result = Word2Number.replace("absolute zero is taken as minus two hundred and seventy three point one five degree celsius on the celsius scale");
+    System.out.println(result);
+    assert "absolute 0 is taken as -273.15 degree celsius on the celsius scale".equals(result);
+
+    result = Word2Number.replace("random sentence minus point three four hundred point");
+    System.out.println(result);
+    assert "random sentence -0.34 hundred point".equals(result);
+
+    result = Word2Number.replace("minus hundred");
+    System.out.println(result);
+    assert "minus 100".equals(result);
+
+    result = Word2Number.replace("minus minus one");
+    System.out.println(result);
+    assert "minus -1".equals(result);
+
+    result = Word2Number.replace("minus minus point");
+    System.out.println(result);
+    assert "minus minus point".equals(result);
+
+    result = Word2Number.replace("you may get negative point");
+    System.out.println(result);
+    assert "you may get negative point".equals(result);
+
+    result = Word2Number.replace("minus point");
+    System.out.println(result);
+    assert "minus point".equals(result);
+
+    result = Word2Number.replace("i will see you at five and you had better not to be late");
+    System.out.println(result);
+    assert "i will see you at 5 and you had better not to be late".equals(result);
+
+    result = Word2Number.replace("minus one point five minus minus three point five equals two");
+    System.out.println(result);
+    assert "-1.5 minus -3.5 equals 2".equals(result);
+
+    result = Word2Number.replace("minus one and minus point five equals minus one point five");
+    System.out.println(result);
+    assert "-1 and -0.5 equals -1.5".equals(result);
   }
 
   @Test
