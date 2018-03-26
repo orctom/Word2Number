@@ -102,27 +102,31 @@ public class Word2NumberTest {
     System.out.println(testString);
     assert "-0.5".equals(testString);
 
-    Word2Number.SIMPLIFY_STANDARD= SimplifyEnum.HUNDRED;
+    testString = Word2Number.transform("fifteen");
+    System.out.println(testString);
+    assert "15".equals(testString);
+
+    Word2Number.SIMPLIFY_STANDARD = SimplifyEnum.HUNDRED;
     testString = Word2Number.transform("thousand hundred");
     System.out.println(testString);
     assert "11 hundred".equals(testString);
 
-    Word2Number.SIMPLIFY_STANDARD=SimplifyEnum.THOUSAND;
+    Word2Number.SIMPLIFY_STANDARD = SimplifyEnum.THOUSAND;
     testString = Word2Number.transform("thousand hundred");
     System.out.println(testString);
     assert "1.1 thousand".equals(testString);
 
-    Word2Number.SIMPLIFY_STANDARD=SimplifyEnum.MILLION;
+    Word2Number.SIMPLIFY_STANDARD = SimplifyEnum.MILLION;
     testString = Word2Number.transform("two million");
     System.out.println(testString);
     assert "2 million".equals(testString);
 
-    Word2Number.SIMPLIFY_STANDARD=SimplifyEnum.BILLION;
+    Word2Number.SIMPLIFY_STANDARD = SimplifyEnum.BILLION;
     testString = Word2Number.transform("eleven billion");
     System.out.println(testString);
     assert "11 billion".equals(testString);
 
-    Word2Number.SIMPLIFY_STANDARD=SimplifyEnum.NONE;
+    Word2Number.SIMPLIFY_STANDARD = SimplifyEnum.NONE;
   }
 
   @Test
@@ -180,13 +184,17 @@ public class Word2NumberTest {
     result = Word2Number.replace("i have two point three billion dollars");
     System.out.println(result);
     assert "i have 2.3 billion dollars".equals(result);
+
+    result = Word2Number.replace("um could you please back up sir you are kinda too close");
+    System.out.println(result);
+    assert "um could you please back up sir you are kinda too close".equals(result);
   }
 
   @Test
-  public void testException(){
+  public void testException() {
     try {
       Word2Number.transform("asd");
-    }catch (IllegalInputException e){
+    } catch (IllegalInputException e) {
 
     }
   }

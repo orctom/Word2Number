@@ -46,12 +46,10 @@ public class Word2Number {
         for (int end = start + 1; ; end++) {
           List<Map<List<String>, Boolean>> resultList;
           if (end == sourceList.size() || !WordEnum.contains(sourceList.get(end))) {
-            try {
-              check(sourceList.subList(start, end));
+            if (checkWithOutException(sourceList.subList(start, end))) {
               resultList = new ArrayList<>();
               resultList.add(Collections.singletonMap(sourceList.subList(start, end), true));
-            } catch (IllegalInputException e) {
-              e.printStackTrace();
+            } else {
               resultList = markSubString(sourceList.subList(start, end));
             }
             resultList.forEach(sub ->
@@ -214,6 +212,42 @@ public class Word2Number {
         }
       }
     }
+  }
+
+  private static boolean checkWithOutException(List<String> sourceList) {
+    List<WordEnum> wordList = map(sourceList);
+    int dotCount = 0;
+    for (int i = 0; i < sourceList.size(); i++) {
+      switch (wordList.get(i).getType()) {
+        case NUMBER: {
+          break;
+        }
+        case SCALE: {
+          if (dotCount > 0) {
+            return false;
+          }
+          break;
+        }
+        case SYMBOL: {
+          if (WordEnum.DOT.same(wordList.get(i))) {
+            if (++dotCount == 2 || i == sourceList.size() - 1 || !TypeEnum.NUMBER.equals(wordList.get(i + 1).getType())) {
+              return false;
+            }
+          } else if (WordEnum.MINUS.same(wordList.get(i)) || WordEnum.AND.same(wordList.get(i))) {
+            if (i == sourceList.size() - 1 || (!TypeEnum.NUMBER.equals(wordList.get(i + 1).getType()) && !TypeEnum.SCALE.equals(wordList.get(i + 1).getType()) && !WordEnum.DOT.same(wordList.get(i + 1)))) {
+              if (i == sourceList.size() - 1 || !TypeEnum.NUMBER.equals(wordList.get(i + 1).getType())) {
+                return false;
+              }
+            }
+          }
+          break;
+        }
+        default: {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   private static FormatEnum getFormatType(List<WordEnum> list) {
