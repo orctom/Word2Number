@@ -86,13 +86,17 @@ public enum WordEnum {
       case POINT_WORD: {
         return DOT.equals(word) || DOT_WORD.equals(word) || POINT_WORD.equals(word);
       }
+      case ZERO:
+      case O: {
+        return ZERO.equals(word) || O.equals(word);
+      }
       default:
         return this.equals(word);
     }
   }
 
-  public static boolean contains(String key) {
-    return !WordEnum.TEXT.equals(getByKey(key));
+  public static boolean notContain(String key) {
+    return WordEnum.TEXT.equals(getByKey(key));
   }
 
   public static WordEnum getByKey(String key) {

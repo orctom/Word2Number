@@ -15,11 +15,11 @@ public class Word2Number {
     List<String> sourceList = Stream.of(source.toLowerCase().split("[ ]")).collect(Collectors.toList());
     List<List<String>> resultList = new ArrayList<>();
     for (int start = 0; start < sourceList.size(); ) {
-      if (!WordEnum.contains(sourceList.get(start))) {
+      if (WordEnum.notContain(sourceList.get(start))) {
         start++;
       } else {
         for (int end = start + 1; ; end++) {
-          if (end == sourceList.size() || !WordEnum.contains(sourceList.get(end))) {
+          if (end == sourceList.size() || WordEnum.notContain(sourceList.get(end))) {
             resultList.add(sourceList.subList(start, end));
             start = end + 1;
             break;
@@ -41,19 +41,14 @@ public class Word2Number {
       if (start != 0) {
         sb.append(' ');
       }
-      if (!WordEnum.contains(sourceList.get(start))) {
+      if (WordEnum.notContain(sourceList.get(start))) {
         sb.append(sourceList.get(start));
         start++;
       } else {
         for (int end = start + 1; ; end++) {
           List<Map<List<String>, Boolean>> resultList;
-          if (end == sourceList.size() || !WordEnum.contains(sourceList.get(end))) {
-            if (checkWithoutException(sourceList.subList(start, end))) {
-              resultList = new ArrayList<>();
-              resultList.add(Collections.singletonMap(sourceList.subList(start, end), true));
-            } else {
-              resultList = markSubString(sourceList.subList(start, end));
-            }
+          if (end == sourceList.size() || WordEnum.notContain(sourceList.get(end))) {
+            resultList = markSubString(sourceList.subList(start, end));
             resultList.forEach(sub ->
                 sub.forEach((key, value) -> {
                   sb.append(value ? calculate(format(map(key)), simplifyStandard) : key.get(0));
@@ -209,11 +204,9 @@ public class Word2Number {
                 illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
                 finish = true;
               }
-            } else {
-              if (TypeEnum.SYMBOL.equals(wordList.get(index + 1).getType()) || TypeEnum.SCALE.equals(wordList.get(index + 1).getType())) {
-                illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
-                finish = true;
-              }
+            } else if (TypeEnum.SYMBOL.equals(wordList.get(index + 1).getType()) || TypeEnum.SCALE.equals(wordList.get(index + 1).getType())) {
+              illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
+              finish = true;
             }
           }
           break;
@@ -277,7 +270,7 @@ public class Word2Number {
 
     if (roundList.stream().map(word -> TypeEnum.NUMBER.equals(word.getType())).reduce((x, y) -> x && y).orElse(false)) {
       for (int i = roundList.size() - 1; i >= 0; i--) {
-        if (roundList.get(i).getValue() >= 20 && i != roundList.size() - 1) {
+        if (roundList.get(i).getValue() >= 20 && i != roundList.size() - 1 && !WordEnum.ZERO.same(roundList.get(i + 1))) {
           resultList.get(0).arg += roundList.get(i).getValue();
           resultList.get(0).scale = getScale(resultList.get(0).arg);
         } else {
