@@ -226,6 +226,18 @@ public class Word2NumberTest {
     result = Word2Number.replace("minus one and minus point five equals minus one point five");
     System.out.println(result);
     assert "-1 and -0.5 equals -1.5".equals(result);
+
+    result = Word2Number.replace("i went to high school on two thousand o four");
+    System.out.println(result);
+    assert "i went to high school on 2004".equals(result);
+
+    result = Word2Number.replace("point point point");
+    System.out.println(result);
+    assert "point point point".equals(result);
+
+    result = Word2Number.replace("point thousand");
+    System.out.println(result);
+    assert "point 1000".equals(result);
   }
 
   @Test
@@ -233,7 +245,67 @@ public class Word2NumberTest {
     try {
       Word2Number.transform("asd");
     } catch (IllegalInputException e) {
-
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("point thousand");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("point one point one point");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("one point");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("minus minus one");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("minus dot");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("and minus one point five");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("two point five thousand");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("one minus minus one");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("one hundred point point five six");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("one minus one");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("one point one minus one hundred");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
+    }
+    try {
+      Word2Number.transform("one minus hundred");
+    } catch (IllegalInputException e) {
+      e.printStackTrace();
     }
   }
 }
