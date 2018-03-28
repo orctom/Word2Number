@@ -341,10 +341,6 @@ public class Word2Number {
         numberValue /= simplifyStandard.getValue();
         final String numberString = numberValue.toString();
         int dotIndex = numberString.indexOf(".");
-        if (dotIndex < 0) {
-          dotIndex = numberString.length();
-        }
-
         String roundPart = numberString.substring(0, dotIndex);
         String decimalPart = numberString.substring(dotIndex + 1);
         decimalPart = decimalPart.equals("0") ? "" : "." + decimalPart;

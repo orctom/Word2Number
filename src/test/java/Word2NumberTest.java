@@ -14,7 +14,7 @@ public class Word2NumberTest {
   @Test
   public void testTransform() {
     String testString;
-    
+
     testString = Word2Number.transform("Hundred", false, SimplifyEnum.NONE);
     System.out.println(testString);
     assertEquals("100", testString);
@@ -106,6 +106,10 @@ public class Word2NumberTest {
     testString = Word2Number.transform("eleven billion", true, SimplifyEnum.BILLION);
     System.out.println(testString);
     assertEquals("11 billion", testString);
+
+    testString = Word2Number.transform("hundred hundred", true, SimplifyEnum.THOUSAND);
+    System.out.println(testString);
+    assertEquals("10 thousand", testString);
   }
 
   @Test
@@ -217,73 +221,69 @@ public class Word2NumberTest {
     fail();
   }
 
-  @Test
-  public void testException() {
-    try {
-      Word2Number.transform("asd");
-      fail();
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("point thousand");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("point one point one point");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("one point");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("minus minus one");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("minus dot");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("and minus one point five");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("two point five thousand");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("one minus minus one");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("one hundred point point five six");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("one minus one");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("one point one minus one hundred");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
-    try {
-      Word2Number.transform("one minus hundred");
-    } catch (IllegalInputException e) {
-      e.printStackTrace();
-    }
+  @Test(expected = IllegalInputException.class)
+  public void testException2() {
+    Word2Number.transform("asd");
+    fail();
+  }
+
+  @Test(expected = IllegalInputException.class)
+  public void testException3() {
+    Word2Number.transform("point thousand");
+    fail();
+  }
+
+  @Test(expected = IllegalInputException.class)
+  public void testException4() {
+    Word2Number.transform("point one point one point");
+    fail();
+  }
+
+  @Test(expected = IllegalInputException.class)
+  public void testException5() {
+    Word2Number.transform("one point");
+    fail();
+  }
+
+  @Test(expected = IllegalInputException.class)
+  public void testException6() {
+    Word2Number.transform("minus minus one");
+    fail();
+  }
+
+  @Test(expected = IllegalInputException.class)
+  public void testException7() {
+    Word2Number.transform("minus dot");
+    fail();
+  }
+
+  @Test(expected = IllegalInputException.class)
+  public void testException9() {
+    Word2Number.transform("two point five thousand");
+    fail();
+  }
+
+  @Test(expected = IllegalInputException.class)
+  public void testException10() {
+    Word2Number.transform("one minus minus one");
+    fail();
+  }
+
+  @Test(expected = IllegalInputException.class)
+  public void testException11() {
+    Word2Number.transform("one hundred point point five six");
+    fail();
+  }
+
+  @Test(expected = IllegalInputException.class)
+  public void testException13() {
+    Word2Number.transform("one point one minus one hundred");
+    fail();
+  }
+
+  @Test(expected = IllegalInputException.class)
+  public void testException14() {
+    Word2Number.transform("one minus hundred");
+    fail();
   }
 }

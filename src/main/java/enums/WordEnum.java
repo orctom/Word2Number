@@ -100,14 +100,7 @@ public enum WordEnum {
     return TEXT == getByKey(key);
   }
 
-  public static boolean isNumber(String key) {
-    return !isNotNumber(key);
-  }
-
   public static WordEnum getByKey(String key) {
-    if (null == key || key.trim().length() == 0) {
-      return TEXT;
-    }
     for (WordEnum num : WordEnum.values()) {
       if (num.getKey().equals(key)) {
         return num;

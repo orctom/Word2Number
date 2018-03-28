@@ -22,15 +22,7 @@ public class Segment {
     return words;
   }
 
-  public void setWords(List<String> words) {
-    this.words = words;
-  }
-
   public boolean isNumber() {
     return isNumber;
-  }
-
-  public void setNumber(boolean number) {
-    isNumber = number;
   }
 }
