@@ -3,31 +3,22 @@ package utils;
 import enums.FormatEnum;
 import enums.SimplifyEnum;
 import enums.WordEnum;
-import enums.TypeEnum;
 import exception.IllegalInputException;
+import model.Segment;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static enums.TypeEnum.*;
+import static enums.WordEnum.*;
 
 public class Word2Number {
-  public static List<List<String>> extract(String source) {
-    List<String> sourceList = Stream.of(source.toLowerCase().split("[ ]")).collect(Collectors.toList());
-    List<List<String>> resultList = new ArrayList<>();
-    for (int start = 0; start < sourceList.size(); ) {
-      if (WordEnum.notContain(sourceList.get(start))) {
-        start++;
-      } else {
-        for (int end = start + 1; ; end++) {
-          if (end == sourceList.size() || WordEnum.notContain(sourceList.get(end))) {
-            resultList.add(sourceList.subList(start, end));
-            start = end + 1;
-            break;
-          }
-        }
-      }
-    }
-    return resultList;
+
+  private static List<String> split(String text) {
+    return Arrays.asList(text.toLowerCase().split("\\s+"));
   }
 
   public static String replace(String source) {
@@ -35,32 +26,41 @@ public class Word2Number {
   }
 
   public static String replace(String source, SimplifyEnum simplifyStandard) {
-    List<String> sourceList = Stream.of(source.toLowerCase().split("[ ]")).collect(Collectors.toList());
+    List<String> sourceList = split(source);
     StringBuilder sb = new StringBuilder();
-    for (int start = 0; start < sourceList.size(); ) {
+    int sourceListSize = sourceList.size();
+    for (int start = 0; start < sourceListSize; ) {
       if (start != 0) {
         sb.append(' ');
       }
-      if (WordEnum.notContain(sourceList.get(start))) {
-        sb.append(sourceList.get(start));
+
+      // append  text till find the fist number
+      String word = sourceList.get(start);
+      if (WordEnum.isNotNumber(word)) {
+        sb.append(word);
         start++;
-      } else {
-        for (int end = start + 1; ; end++) {
-          List<Map<List<String>, Boolean>> resultList;
-          if (end == sourceList.size() || WordEnum.notContain(sourceList.get(end))) {
-            resultList = markSubString(sourceList.subList(start, end));
-            resultList.forEach(sub ->
-                sub.forEach((key, value) -> {
-                  sb.append(value ? calculate(format(map(key)), simplifyStandard) : key.get(0));
-                  sb.append(' ');
-                })
-            );
-            sb.deleteCharAt(sb.length() - 1);
-            start = end;
-            break;
-          }
+        continue;
+      }
+
+      // find the end of the number
+      int end = start + 1;
+      for (; end < sourceListSize; end++) {
+        if (WordEnum.isNotNumber(sourceList.get(end))) {
+          break;
         }
       }
+
+      // process the numbers
+      List<Segment> resultList;
+      List<String> numbers = sourceList.subList(start, end);
+      resultList = markSubString(numbers);
+      resultList.forEach(sub ->
+          sb
+              .append(sub.isNumber() ? transform(sub.getWords(), false, simplifyStandard) : sub.getWords().get(0))
+              .append(" "));
+
+      sb.deleteCharAt(sb.length() - 1);
+      start = end;
     }
     return sb.toString();
   }
@@ -69,22 +69,9 @@ public class Word2Number {
     return transform(source, true, SimplifyEnum.NONE);
   }
 
+
   public static String transform(String source, boolean needCheck, SimplifyEnum simplifyStandard) {
-    String[] sourceArray = source.toLowerCase().split("[ ]");
-    return transform(sourceArray, needCheck, simplifyStandard);
-  }
-
-  public static String transform(String[] sourceArray) {
-    return transform(sourceArray, true, SimplifyEnum.NONE);
-  }
-
-  public static String transform(String[] sourceArray, boolean needCheck, SimplifyEnum simplifyStandard) {
-    List<String> sourceList = Stream.of(sourceArray).collect(Collectors.toList());
-    return transform(sourceList, needCheck, simplifyStandard);
-  }
-
-  public static String transform(List<String> sourceList) {
-    return transform(sourceList, true, SimplifyEnum.NONE);
+    return transform(split(source), needCheck, simplifyStandard);
   }
 
   public static String transform(List<String> sourceList, boolean needCheck, SimplifyEnum simplifyStandard) {
@@ -105,12 +92,12 @@ public class Word2Number {
   }
 
   private static void check(List<String> sourceList) {
-    if (!checkWithoutException(sourceList)) {
+    if (!isValidNumber(sourceList)) {
       throw new IllegalInputException();
     }
   }
 
-  private static boolean checkWithoutException(List<String> sourceList) {
+  private static boolean isValidNumber(List<String> sourceList) {
     List<WordEnum> wordList = map(sourceList);
     int dotCount = 0;
     for (int i = 0; i < sourceList.size(); i++) {
@@ -125,21 +112,23 @@ public class Word2Number {
           break;
         }
         case SYMBOL: {
-          if (WordEnum.DOT.same(wordList.get(i))) {
-            if (++dotCount == 2 || i == sourceList.size() - 1 || !TypeEnum.NUMBER.equals(wordList.get(i + 1).getType())) {
+          if (DOT.same(wordList.get(i))) {
+            if (++dotCount == 2 || i == sourceList.size() - 1 || NUMBER != wordList.get(i + 1).getType()) {
               return false;
             }
-          } else if (WordEnum.MINUS.same(wordList.get(i)) || WordEnum.AND.same(wordList.get(i))) {
+          } else if (MINUS.same(wordList.get(i)) || AND.same(wordList.get(i))) {
             if (i == sourceList.size() - 1 || dotCount > 0) {
               return false;
-            } else if (WordEnum.MINUS.same(wordList.get(i)) && WordEnum.MINUS.same(wordList.get(i + 1)) || WordEnum.AND.same(wordList.get(i)) && WordEnum.AND.same(wordList.get(i + 1))) {
+            } else if ((MINUS.same(wordList.get(i)) && MINUS.same(wordList.get(i + 1))) ||
+                (AND.same(wordList.get(i)) && AND.same(wordList.get(i + 1)))) {
               return false;
             } else if (i == 0) {
-              if (TypeEnum.SCALE.equals(wordList.get(i + 1).getType()) || WordEnum.DOT.same(wordList.get(i + 1)) && sourceList.size() == 2) {
+              if (SCALE == wordList.get(i + 1).getType() ||
+                  (DOT.same(wordList.get(i + 1)) && sourceList.size() == 2)) {
                 return false;
               }
             } else {
-              if (TypeEnum.SYMBOL.equals(wordList.get(i + 1).getType()) || TypeEnum.SCALE.equals(wordList.get(i + 1).getType())) {
+              if (SYMBOL == wordList.get(i + 1).getType() || SCALE == wordList.get(i + 1).getType()) {
                 return false;
               }
             }
@@ -154,59 +143,62 @@ public class Word2Number {
     return true;
   }
 
-  private static List<Map<List<String>, Boolean>> markSubString(List<String> sourceList) {
+  private static List<Segment> markSubString(List<String> sourceList) {
     if (sourceList.isEmpty()) {
-      return new ArrayList<>();
+      return Collections.emptyList();
     }
 
-    List<Map<List<String>, Boolean>> prefixList = new ArrayList<>();
+    List<Segment> prefixList = new ArrayList<>();
     List<WordEnum> wordList = map(sourceList);
     List<String> item = new ArrayList<>();
-    Map<List<String>, Boolean> itemMap = new HashMap<>();
-    Map<List<String>, Boolean> illegalItemMap = new HashMap<>();
+    Segment itemMap;
+    Segment illegalItemMap = null;
     int index = 0;
     int dotCount = 0;
     boolean finish = false;
     while (!finish) {
+      String word = sourceList.get(index);
       switch (wordList.get(index).getType()) {
         case NUMBER: {
-          item.add(sourceList.get(index));
+          item.add(word);
           break;
         }
         case SCALE: {
           if (dotCount == 0) {
-            item.add(sourceList.get(index));
+            item.add(word);
           } else {
-            illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
+            illegalItemMap = new Segment(word, false);
             finish = true;
           }
           break;
         }
         case SYMBOL: {
-          if (WordEnum.DOT.same(wordList.get(index))) {
-            if (++dotCount == 2 || index == sourceList.size() - 1 || !TypeEnum.NUMBER.equals(wordList.get(index + 1).getType())) {
-              illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
+          if (DOT.same(wordList.get(index))) {
+            if (++dotCount == 2 || index == sourceList.size() - 1 || !NUMBER.equals(wordList.get(index + 1).getType())) {
+              illegalItemMap = new Segment(word, false);
               finish = true;
             } else {
-              item.add(sourceList.get(index));
+              item.add(word);
             }
-          } else if (WordEnum.MINUS.same(wordList.get(index)) || WordEnum.AND.same(wordList.get(index))) {
+          } else if (MINUS.same(wordList.get(index)) || AND.same(wordList.get(index))) {
             if (index == sourceList.size() - 1 || dotCount > 0) {
-              illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
+              illegalItemMap = new Segment(word, false);
               finish = true;
-            } else if (WordEnum.MINUS.same(wordList.get(index)) && WordEnum.MINUS.same(wordList.get(index + 1)) || WordEnum.AND.same(wordList.get(index)) && WordEnum.AND.same(wordList.get(index + 1))) {
-              illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
+            } else if (MINUS.same(wordList.get(index)) && MINUS.same(wordList.get(index + 1)) || AND.same(wordList.get(index)) && AND.same(wordList.get(index + 1))) {
+              illegalItemMap = new Segment(word, false);
               finish = true;
             } else if (index == 0) {
-              if (TypeEnum.NUMBER.equals(wordList.get(index + 1).getType()) || WordEnum.DOT.same(wordList.get(index + 1)) && sourceList.size() > 2) {
-                item.add(sourceList.get(index));
-              } else if (TypeEnum.SCALE.equals(wordList.get(index + 1).getType()) || WordEnum.DOT.same(wordList.get(index + 1)) && sourceList.size() == 2) {
-                illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
+              if (NUMBER.equals(wordList.get(index + 1).getType()) || DOT.same(wordList.get(index + 1)) && sourceList.size() > 2) {
+                item.add(word);
+              } else if (SCALE.equals(wordList.get(index + 1).getType()) || DOT.same(wordList.get(index + 1)) && sourceList.size() == 2) {
+                illegalItemMap = new Segment(word, false);
                 finish = true;
               }
-            } else if (TypeEnum.SYMBOL.equals(wordList.get(index + 1).getType()) || TypeEnum.SCALE.equals(wordList.get(index + 1).getType())) {
-              illegalItemMap.put(Collections.singletonList(sourceList.get(index)), false);
-              finish = true;
+            } else {
+              if (SYMBOL.equals(wordList.get(index + 1).getType()) || SCALE.equals(wordList.get(index + 1).getType())) {
+                illegalItemMap = new Segment(word, false);
+                finish = true;
+              }
             }
           }
           break;
@@ -219,14 +211,14 @@ public class Word2Number {
     }
 
     if (!item.isEmpty()) {
-      itemMap.put(item, true);
+      itemMap = new Segment(item, true);
       prefixList.add(itemMap);
     }
-    if (!illegalItemMap.isEmpty()) {
+    if (null != illegalItemMap) {
       prefixList.add(illegalItemMap);
     }
 
-    List<Map<List<String>, Boolean>> suffixList = markSubString(sourceList.subList(index, sourceList.size()));
+    List<Segment> suffixList = markSubString(sourceList.subList(index, sourceList.size()));
     prefixList.addAll(suffixList);
     return prefixList;
   }
@@ -234,8 +226,8 @@ public class Word2Number {
   private static FormatEnum getFormatType(List<WordEnum> list) {
     boolean hasDot = false;
     for (WordEnum word : list) {
-      if (WordEnum.DOT.same(word)) {
-        if (!list.get(list.size() - 1).same(WordEnum.DOT)) {
+      if (DOT.same(word)) {
+        if (!list.get(list.size() - 1).same(DOT)) {
           hasDot = true;
         }
       }
@@ -247,28 +239,37 @@ public class Word2Number {
     return list.stream().map(WordEnum::getByKey).collect(Collectors.toList());
   }
 
-  //grammar analysis
-  //reference: https://en.wikipedia.org/wiki/English_numerals
+  /**
+   * grammar analysis
+   * reference: https://en.wikipedia.org/wiki/English_numerals
+   */
   private static List<Data> format(List<WordEnum> list) {
     FormatEnum formatType = getFormatType(list);
     List<WordEnum> roundList = new ArrayList<>();
     List<Data> resultList = new ArrayList<>();
 
     for (int i = 0; i < list.size() - 1; i++) {
-      if (WordEnum.DOT.same(list.get(i))) {
+      if (DOT.same(list.get(i))) {
         roundList.addAll(list.subList(0, i));
         if (roundList.size() == 0) {
           roundList.add(WordEnum.ZERO);
         }
-        resultList.addAll(list.subList(i + 1, list.size()).stream().map(x -> new Data(x.getValue(), -1L)).collect(Collectors.toList()));
+        resultList.addAll(list.subList(i + 1, list.size()).stream()
+            .map(x -> new Data(x.getValue(), -1L))
+            .collect(Collectors.toList()));
         break;
       }
     }
-    if (FormatEnum.ROUND.equals(formatType)) {
+
+    if (FormatEnum.ROUND == formatType) {
       roundList = list;
     }
 
-    if (roundList.stream().map(word -> TypeEnum.NUMBER.equals(word.getType())).reduce((x, y) -> x && y).orElse(false)) {
+    // phone numbers and years
+    if (roundList.stream()
+        .map(word -> NUMBER == word.getType())
+        .reduce((x, y) -> x && y)
+        .orElse(false)) {
       for (int i = roundList.size() - 1; i >= 0; i--) {
         if (roundList.get(i).getValue() >= 20 && i != roundList.size() - 1 && !WordEnum.ZERO.same(roundList.get(i + 1))) {
           resultList.get(0).arg += roundList.get(i).getValue();
@@ -277,6 +278,7 @@ public class Word2Number {
           resultList.add(0, new Data(roundList.get(i).getValue(), roundList.get(i).getScale()));
         }
       }
+
     } else {
       Data data = new Data(0L, 1L);
       long arg = 0;
@@ -309,10 +311,12 @@ public class Word2Number {
           }
         }
       }
+
       data.arg += arg;
       data.scale = getScale(data.arg);
       resultList.add(0, data);
-      if (WordEnum.MINUS.same(roundList.get(0)) && (FormatEnum.DECIMAL.equals(formatType) || !(roundList.size() == 2 && roundList.get(1).getValue().equals(0L)))) {
+      if (MINUS.same(roundList.get(0)) &&
+          (FormatEnum.DECIMAL == formatType || !(roundList.size() == 2 && roundList.get(1).getValue().equals(0L)))) {
         resultList.add(0, Data.MINUS_SYMBOL_DATA);
       }
     }
@@ -324,6 +328,7 @@ public class Word2Number {
     if (Data.MINUS_SYMBOL_DATA.equals(list.get(0))) {
       sb.append('-');
     }
+
     list.stream().filter(data -> data.scale > 0).map(data -> data.arg.toString()).forEach(sb::append);
     if (list.stream().anyMatch(data -> data.scale < 0)) {
       sb.append('.');
@@ -331,10 +336,15 @@ public class Word2Number {
       return sb.toString();
     } else {
       Double numberValue = Double.parseDouble(sb.toString());
-      if (!simplifyStandard.equals(SimplifyEnum.NONE) && getScale(Long.parseLong(sb.toString())) >= getScale(simplifyStandard.getValue())) {
+      if (simplifyStandard != SimplifyEnum.NONE &&
+          getScale(Long.valueOf(sb.toString())) >= getScale(simplifyStandard.getValue())) {
         numberValue /= simplifyStandard.getValue();
-        String numberString = numberValue.toString();
-        int dotIndex = numberString.split("[.]")[0].length();
+        final String numberString = numberValue.toString();
+        int dotIndex = numberString.indexOf(".");
+        if (dotIndex < 0) {
+          dotIndex = numberString.length();
+        }
+
         String roundPart = numberString.substring(0, dotIndex);
         String decimalPart = numberString.substring(dotIndex + 1);
         decimalPart = decimalPart.equals("0") ? "" : "." + decimalPart;

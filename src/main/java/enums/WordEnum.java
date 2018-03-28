@@ -78,33 +78,41 @@ public enum WordEnum {
   public boolean same(WordEnum word) {
     switch (this) {
       case MINUS:
+      case NEGATIVE_WORD:
       case MINUS_WORD: {
-        return MINUS.equals(word) || MINUS_WORD.equals(word) || NEGATIVE_WORD.equals(word);
+        return MINUS == word || MINUS_WORD == word || NEGATIVE_WORD == word;
       }
       case DOT:
       case DOT_WORD:
       case POINT_WORD: {
-        return DOT.equals(word) || DOT_WORD.equals(word) || POINT_WORD.equals(word);
+        return DOT == word || DOT_WORD == word || POINT_WORD == word;
       }
       case ZERO:
       case O: {
         return ZERO.equals(word) || O.equals(word);
       }
       default:
-        return this.equals(word);
+        return this == word;
     }
   }
 
-  public static boolean notContain(String key) {
-    return WordEnum.TEXT.equals(getByKey(key));
+  public static boolean isNotNumber(String key) {
+    return TEXT == getByKey(key);
+  }
+
+  public static boolean isNumber(String key) {
+    return !isNotNumber(key);
   }
 
   public static WordEnum getByKey(String key) {
+    if (null == key || key.trim().length() == 0) {
+      return TEXT;
+    }
     for (WordEnum num : WordEnum.values()) {
       if (num.getKey().equals(key)) {
         return num;
       }
     }
-    return WordEnum.TEXT;
+    return TEXT;
   }
 }
